@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Consumptions{% endblock %}
+
+{% block content %}
+<h1>Consumptions Records</h1>
+
+{% if session.role in ['admin', 'staff'] %}
+<div class="card mb-4">
+    <div class="card-header">Add New Consumption Record</div>
+    <div class="card-body">
+        <form action="{{ url_for('add_consommation') }}" method="post" class="row g-3">
+            <div class="col-md-3">
+                <label for="id_chambre" class="form-label">Room</label>
+                <select class="form-select" id="id_chambre" name="id_chambre" required>
+                    <option value="" selected disabled>-- Select Room --</option>
+                    {% for chambre in chambres %}
+                    <option value="{{ chambre.id_chambre }}">#{{ chambre.numero_chambre }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="type_consommation" class="form-label">Consumption Type</label>
+                <select class="form-select" id="type_consommation" name="type_consommation" required>
+                     <option value="Énergie">Énergie (Energy)</option>
+                     <option value="Eau">Eau (Water)</option>
+                     <option value="Gaz">Gaz (Gas)</option>
+                     <option value="Minibar">Minibar</option>
+                 </select>
+            </div>
+            <div class="col-md-2">
+                <label for="date_releve" class="form-label">Reading Date</label>
+                <input type="date" class="form-control" id="date_releve" name="date_releve" value="{{ now().strftime('%Y-%m-%d') }}" required>
+            </div>
+            <div class="col-md-2">
+                <label for="valeur" class="form-label">Value</label>
+                <input type="number" step="any" class="form-control" id="valeur" name="valeur" required>
+            </div>
+             <div class="col-md-1">
+                <label for="unite" class="form-label">Unit</label>
+                <input type="text" class="form-control" id="unite" name="unite" placeholder="kWh, m³, item" required>
+            </div>
+             <div class="col-md-1">
+                <label for="cout_unitaire" class="form-label">Cost/Unit (€)</label>
+                <input type="number" step="any" min="0" class="form-control" id="cout_unitaire" name="cout_unitaire" required>
+            </div>
+             <div class="col-12">
+                <button type="submit" class="btn btn-primary">Add Record</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+<h2>Consumption List</h2>
+<table class="table table-striped table-hover table-sm">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Room</th>
+            <th>Reservation ID</th>
+            <th>Type</th>
+            <th>Reading Date</th>
+            <th>Value</th>
+            <th>Unit</th>
+            <th>Cost/Unit (€)</th>
+            <th>Total Cost (€)</th>
+             <!-- Add Actions column if Edit/Delete implemented -->
+        </tr>
+    </thead>
+    <tbody>
+        {% for conso in consommations %}
+        <tr>
+            <td>{{ conso.id_consommation }}</td>
+            <td>#{{ conso.numero_chambre }}</td>
+            <td>{% if conso.id_reservation %}{{ conso.id_reservation }}{% else %}-{% endif %}</td>
+            <td>{{ conso.type_consommation }}</td>
+            <td>{{ conso.date_releve }}</td>
+            <td>{{ conso.valeur }}</td>
+            <td>{{ conso.unite }}</td>
+            <td>{{ "%.4f"|format(conso.cout_unitaire) }}</td>
+             <td>{{ "%.2f"|format(conso.valeur * conso.cout_unitaire) }}</td>
+             <!-- Add Edit/Delete buttons here -->
+        </tr>
+        {% else %}
+        <tr>
+            <td colspan="9" class="text-center">No consumption records found.</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

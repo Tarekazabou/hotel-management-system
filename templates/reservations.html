@@ -9,37 +9,54 @@
 <div class="card mb-4">
     <div class="card-header">Add New Reservation</div>
     <div class="card-body">
-        <form action="{{ url_for('add_reservation') }}" method="post" class="row g-3">
-            <div class="col-md-4">
+        <form action="{{ url_for('add_reservation') }}" method="post" class="row g-3 needs-validation" novalidate>
+            <div class="col-md-6 col-lg-3">
                 <label for="id_client" class="form-label">Client</label>
                 <select class="form-select" id="id_client" name="id_client" required>
                     <option value="" selected disabled>-- Select Client --</option>
                     {% for client in clients %}
-                    <option value="{{ client.id_client }}">{{ client.prenom }} {{ client.nom }} ({{ client.email }})</option>
+                    <option value="{{ client.id_client }}">{{ client.prenom }} {{ client.nom }} ({{ client.statut_fidelite }})</option>
                     {% endfor %}
+                     {% if not clients %}<option disabled>No clients found</option>{% endif %}
                 </select>
+                 <div class="invalid-feedback">Client required.</div>
             </div>
-            <div class="col-md-3">
-                <label for="id_chambre" class="form-label">Room</label>
+            <div class="col-md-6 col-lg-3">
+                <label for="id_chambre" class="form-label">Room (Base Price)</label>
                 <select class="form-select" id="id_chambre" name="id_chambre" required>
                     <option value="" selected disabled>-- Select Available Room --</option>
                     {% for chambre in chambres %}
-                    <option value="{{ chambre.id_chambre }}">#{{ chambre.numero_chambre }}</option>
+                    <option value="{{ chambre.id_chambre }}">#{{ chambre.numero_chambre }} ({{ chambre.type_chambre }} - {{ "%.2f"|format(chambre.prix_nuit_base) }}€)</option>
                     {% endfor %}
                      {% if not chambres %}<option disabled>No rooms available</option>{% endif %}
                 </select>
-                 <small class="form-text text-muted">Only non-occupied rooms listed.</small>
+                 <div class="invalid-feedback">Room required.</div>
             </div>
-            <div class="col-md-2">
+             {# --- Added Tariff Selection --- #}
+            <div class="col-md-6 col-lg-2">
+                <label for="id_tarif" class="form-label">Tariff</label>
+                <select class="form-select" id="id_tarif" name="id_tarif" required>
+                     <option value="" selected disabled>-- Select Tariff --</option>
+                     {% for tarif in tarifs %} {# Assuming 'tarifs' is passed from the route #}
+                     <option value="{{ tarif.id_tarif }}">{{ tarif.nom_tarif }} ({{ "%.1f"|format(tarif.reduction_pourcentage) }}% off)</option>
+                     {% endfor %}
+                      {% if not tarifs %}<option disabled>No tariffs defined</option>{% endif %}
+                </select>
+                 <div class="invalid-feedback">Tariff required.</div>
+            </div>
+             {# --- End Tariff Selection --- #}
+            <div class="col-md-6 col-lg-2">
                 <label for="date_debut" class="form-label">Check-in Date</label>
                 <input type="date" class="form-control" id="date_debut" name="date_debut" required>
+                 <div class="invalid-feedback">Check-in required.</div>
             </div>
-             <div class="col-md-2">
+             <div class="col-md-6 col-lg-2">
                 <label for="date_fin" class="form-label">Check-out Date</label>
                 <input type="date" class="form-control" id="date_fin" name="date_fin" required>
+                 <div class="invalid-feedback">Check-out required.</div>
             </div>
-             <div class="col-md-1 align-self-end">
-                <button type="submit" class="btn btn-primary w-100">Book</button>
+             <div class="col-12">
+                <button type="submit" class="btn btn-primary">Book Reservation</button>
             </div>
         </form>
     </div>
@@ -53,8 +70,10 @@
             <th>ID</th>
             <th>Client</th>
             <th>Room</th>
+            <th>Tariff</th> {# <-- Added Column #}
             <th>Check-in</th>
             <th>Check-out</th>
+            <th>Price/Night (€)</th> {# <-- Added Column #}
             <th>Status</th>
             {% if session.role in ['admin', 'staff'] %}
             <th>Actions</th>
@@ -66,34 +85,32 @@
         <tr>
             <td>{{ reservation.id_reservation }}</td>
             <td>{{ reservation.prenom }} {{ reservation.nom }}</td>
-            <td>#{{ reservation.numero_chambre }}</td>
+            <td>#{{ reservation.numero_chambre }} ({{ reservation.type_chambre }})</td>
+            <td>{{ reservation.nom_tarif }}</td> {# <-- Display Tariff Name #}
             <td>{{ reservation.date_debut }}</td>
             <td>{{ reservation.date_fin }}</td>
+            <td>{{ "%.2f"|format(reservation.prix_nuit_applique) }}</td> {# <-- Display Applied Price #}
             <td>
-                 <span class="badge
-                    {% if reservation.statut == 'Confirmée' %} bg-primary
-                    {% elif reservation.statut == 'Terminée' %} bg-secondary
-                    {% elif reservation.statut == 'Annulée' %} bg-danger
-                    {% else %} bg-light text-dark {% endif %}">
+                 <span class="badge rounded-pill {% if reservation.statut == 'Confirmée' %} bg-primary {% elif reservation.statut == 'Terminée' %} bg-secondary {% elif reservation.statut == 'Annulée' %} bg-danger {% else %} bg-light text-dark {% endif %}">
                     {{ reservation.statut }}
                  </span>
             </td>
              {% if session.role in ['admin', 'staff'] %}
              <td>
                  {% if reservation.statut == 'Confirmée' %}
-                     <form action="{{ url_for('cancel_reservation', id=reservation.id_reservation) }}" method="post" style="display: inline;" onsubmit="return confirm('Are you sure you want to cancel this reservation?');">
+                     <form action="{{ url_for('cancel_reservation', id=reservation.id_reservation) }}" method="post" style="display: inline;" onsubmit="return confirm('Cancel Reservation #{{ reservation.id_reservation }}?');">
                          <button type="submit" class="btn btn-danger btn-sm">Cancel</button>
                      </form>
                  {% else %}
                     <span class="text-muted">-</span>
                  {% endif %}
-                 <!-- Add link/button to add services if needed -->
+                 <!-- Add link/button to add services or view details if needed -->
              </td>
              {% endif %}
         </tr>
         {% else %}
         <tr>
-            <td colspan="{{ 7 if session.role in ['admin', 'staff'] else 6 }}" class="text-center">No reservations found.</td>
+            <td colspan="{{ 9 if session.role in ['admin', 'staff'] else 8 }}" class="text-center">No reservations found.</td>
         </tr>
         {% endfor %}
     </tbody>

@@ -5,49 +5,95 @@
 {% block content %}
 <h1>Guest Reviews</h1>
 
-{% if session.role == 'admin' %}
-<div class="card mb-4">
-    <div class="card-header">Reviews Pending Moderation</div>
+{# Section for Clients to Submit Reviews #}
+{% if session.role == 'client' and client_reservations %}
+<div class="card mb-4 border-primary">
+    <div class="card-header bg-primary text-white">Submit a Review</div>
     <div class="card-body">
-        {% if pending_avis %}
+        <form action="{{ url_for('add_avis') }}" method="post" class="needs-validation" novalidate>
+            <div class="mb-3">
+                <label for="id_reservation" class="form-label">Select Your Completed Stay:</label>
+                <select class="form-select" id="id_reservation" name="id_reservation" required>
+                    <option value="" selected disabled>-- Select Reservation --</option>
+                    {% for res in client_reservations %}
+                    <option value="{{ res.id_reservation }}">
+                        Room #{{ res.numero_chambre }} (Check-out: {{ res.date_fin }})
+                    </option>
+                    {% endfor %}
+                </select>
+                 <div class="invalid-feedback">Please select the stay you want to review.</div>
+            </div>
+            <div class="mb-3">
+                <label for="note" class="form-label">Rating (1-5):</label>
+                <select class="form-select" id="note" name="note" required>
+                     <option value="" selected disabled>-- Rate --</option>
+                     <option value="5">5 - Excellent</option>
+                     <option value="4">4 - Very Good</option>
+                     <option value="3">3 - Good</option>
+                     <option value="2">2 - Fair</option>
+                     <option value="1">1 - Poor</option>
+                </select>
+                 <div class="invalid-feedback">Please select a rating.</div>
+            </div>
+            <div class="mb-3">
+                 <label for="commentaire" class="form-label">Comment:</label>
+                 <textarea class="form-control" id="commentaire" name="commentaire" rows="3" required></textarea>
+                 <div class="invalid-feedback">Please leave a comment.</div>
+            </div>
+            <button type="submit" class="btn btn-primary">Submit Review</button>
+        </form>
+    </div>
+</div>
+{% elif session.role == 'client' %}
+ <p class="text-muted">You have no completed stays available to review at this time.</p>
+{% endif %}
+
+
+{# Section for Admin to Moderate Pending Reviews #}
+{% if session.role == 'admin' and pending_avis %}
+<div class="card mb-4 border-warning">
+    <div class="card-header bg-warning text-dark">Reviews Pending Moderation</div>
+    <div class="card-body">
         <ul class="list-group">
             {% for review in pending_avis %}
             <li class="list-group-item d-flex justify-content-between align-items-start">
                 <div class="ms-2 me-auto">
-                    <div class="fw-bold">{{ review.client_name }} (Reservation #{{ review.id_reservation }}) - {{ review.date_avis }}</div>
-                    <span class="badge bg-warning text-dark">Rating: {{ review.note }}/5</span>
+                    <div class="fw-bold">{{ review.client_name }} (Res #{{ review.id_reservation }}) - {{ review.date_avis }}</div>
+                    <span class="badge bg-secondary">Rating: {{ review.note }}/5</span>
                     <p class="mb-0 mt-1">{{ review.commentaire }}</p>
                 </div>
-                 <form action="{{ url_for('approve_avis', id=review.id_avis) }}" method="post" style="display: inline;" class="ms-2">
-                     <button type="submit" class="btn btn-success btn-sm">Approve</button>
-                 </form>
-                 <form action="{{ url_for('delete_avis', id=review.id_avis) }}" method="post" style="display: inline;" class="ms-2" onsubmit="return confirm('Are you sure you want to delete this review?');">
-                     <button type="submit" class="btn btn-danger btn-sm">Delete</button>
-                 </form>
+                 <div class="btn-group" role="group" aria-label="Moderation actions">
+                     <form action="{{ url_for('approve_avis', id=review.id_avis) }}" method="post" style="display: inline;">
+                         <button type="submit" class="btn btn-success btn-sm">Approve</button>
+                     </form>
+                     <form action="{{ url_for('delete_avis', id=review.id_avis) }}" method="post" style="display: inline;" onsubmit="return confirm('Delete this pending review?');">
+                         <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                     </form>
+                 </div>
             </li>
             {% endfor %}
         </ul>
-        {% else %}
-        <p class="text-muted">No reviews are currently pending moderation.</p>
-        {% endif %}
     </div>
 </div>
-{% endif %} {# End Admin check #}
+{% elif session.role == 'admin' %}
+ <p class="text-muted">No reviews are currently pending moderation.</p>
+{% endif %}
 
 
+{# Section to Display Approved Reviews #}
 <h2>Approved Reviews</h2>
 {% if approved_avis %}
 <div class="list-group">
     {% for review in approved_avis %}
-    <div class="list-group-item list-group-item-action flex-column align-items-start mb-2">
+    <div class="list-group-item list-group-item-action flex-column align-items-start mb-2 shadow-sm">
         <div class="d-flex w-100 justify-content-between">
             <h5 class="mb-1">{{ review.client_name }}</h5>
-            <small>{{ review.date_avis }}</small>
+            <small class="text-muted">{{ review.date_avis }}</small>
         </div>
          <p class="mb-1"><strong>Rating: {{ review.note }}/5</strong></p>
         <p class="mb-1">{{ review.commentaire }}</p>
-         {% if session.role == 'admin' %} {# Admin might still want to delete approved reviews #}
-            <form action="{{ url_for('delete_avis', id=review.id_avis) }}" method="post" style="display: inline;" class="mt-1" onsubmit="return confirm('Are you sure you want to delete this approved review?');">
+         {% if session.role == 'admin' %} {# Admin can delete approved reviews too #}
+            <form action="{{ url_for('delete_avis', id=review.id_avis) }}" method="post" style="display: inline;" class="mt-1" onsubmit="return confirm('Delete this approved review?');">
                  <button type="submit" class="btn btn-outline-danger btn-sm">Delete</button>
             </form>
          {% endif %}
@@ -57,7 +103,5 @@
 {% else %}
 <p class="text-muted">No approved reviews yet.</p>
 {% endif %}
-
-<!-- Note: A form for clients to *submit* reviews would likely be on a different page or workflow -->
 
 {% endblock %}

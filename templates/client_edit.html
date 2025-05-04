@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Client - {{ client.prenom }} {{ client.nom }}{% endblock %}
+
+{% block content %}
+<h1>Edit Client #{{ client.id_client }}</h1>
+
+<form action="{{ url_for('edit_client', id=client.id_client) }}" method="post" class="needs-validation" novalidate>
+    <div class="row g-3">
+        <div class="col-md-4">
+            <label for="prenom" class="form-label">First Name</label>
+            <input type="text" class="form-control" id="prenom" name="prenom" value="{{ client.prenom }}" required>
+             <div class="invalid-feedback">First name is required.</div>
+        </div>
+        <div class="col-md-4">
+            <label for="nom" class="form-label">Last Name</label>
+            <input type="text" class="form-control" id="nom" name="nom" value="{{ client.nom }}" required>
+            <div class="invalid-feedback">Last name is required.</div>
+        </div>
+        <div class="col-md-4">
+            <label for="email" class="form-label">Email</label>
+            <input type="email" class="form-control" id="email" name="email" value="{{ client.email }}" required>
+            <div class="invalid-feedback">Please enter a valid email.</div>
+        </div>
+        <div class="col-md-4">
+            <label for="telephone" class="form-label">Telephone</label>
+            <input type="tel" class="form-control" id="telephone" name="telephone" value="{{ client.telephone or '' }}">
+        </div>
+        <div class="col-md-4">
+             <label for="statut_fidelite" class="form-label">Loyalty Status</label>
+             <select class="form-select" id="statut_fidelite" name="statut_fidelite" required>
+                 <option value="Standard" {% if client.statut_fidelite == 'Standard' %}selected{% endif %}>Standard</option>
+                 <option value="VIP" {% if client.statut_fidelite == 'VIP' %}selected{% endif %}>VIP</option>
+                 <option value="Or" {% if client.statut_fidelite == 'Or' %}selected{% endif %}>Gold</option> <!-- Changed 'Or' to 'Gold' for display -->
+             </select>
+             <div class="invalid-feedback">Please select a loyalty status.</div>
+        </div>
+        <div class="col-md-4">
+             <label for="adresse" class="form-label">Address</label>
+             <input type="text" class="form-control" id="adresse" name="adresse" value="{{ client.adresse or '' }}">
+        </div>
+        <div class="col-12 mt-4">
+            <button type="submit" class="btn btn-primary">Save Changes</button>
+            <a href="{{ url_for('view_clients') }}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </div>
+</form>
+
+{% if session.role == 'admin' %}
+<hr>
+<form action="{{ url_for('delete_client', id=client.id_client) }}" method="post" onsubmit="return confirm('Are you sure you want to delete client {{ client.prenom }} {{ client.nom }}? This might fail if they have related data.');">
+    <button type="submit" class="btn btn-danger">Delete Client</button>
+</form>
+{% endif %}
+
+{% endblock %}

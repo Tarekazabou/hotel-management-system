@@ -9,24 +9,27 @@
 <div class="card mb-4">
     <div class="card-header">Add New Room</div>
     <div class="card-body">
-        <form action="{{ url_for('add_chambre') }}" method="post" class="row g-3">
+        {# Add Room Form - Uses prix_nuit_base #}
+        <form action="{{ url_for('add_chambre') }}" method="post" class="row g-3 needs-validation" novalidate>
             <div class="col-md-2">
                 <label for="numero_chambre" class="form-label">Room Number</label>
                 <input type="text" class="form-control" id="numero_chambre" name="numero_chambre" required>
+                 <div class="invalid-feedback">Required.</div>
             </div>
             <div class="col-md-3">
                 <label for="type_chambre" class="form-label">Type</label>
-                <input type="text" class="form-control" id="type_chambre" name="type_chambre" list="room_types" required>
-                 <datalist id="room_types">
-                     <option value="Simple">
-                     <option value="Double">
-                     <option value="Suite">
-                     <option value="Familiale">
-                 </datalist>
+                <select class="form-select" id="type_chambre" name="type_chambre" required>
+                     <option value="Simple">Simple</option>
+                     <option value="Double">Double</option>
+                     <option value="Suite">Suite</option>
+                     <option value="Familiale">Familiale</option>
+                 </select>
+                 <div class="invalid-feedback">Select type.</div>
             </div>
              <div class="col-md-2">
-                <label for="prix_nuit" class="form-label">Price/Night</label>
-                <input type="number" step="0.01" class="form-control" id="prix_nuit" name="prix_nuit" required>
+                <label for="prix_nuit_base" class="form-label">Base Price/Night (€)</label> {# <--- Changed label #}
+                <input type="number" step="0.01" min="0" class="form-control" id="prix_nuit_base" name="prix_nuit_base" required> {# <--- Changed name #}
+                 <div class="invalid-feedback">Enter price.</div>
             </div>
             <div class="col-md-3">
                  <label for="statut" class="form-label">Status</label>
@@ -35,6 +38,7 @@
                      <option value="Occupé">Occupé (Occupied)</option>
                      <option value="En nettoyage">En nettoyage (Cleaning)</option>
                  </select>
+                 <div class="invalid-feedback">Select status.</div>
             </div>
              <div class="col-md-2 align-self-end">
                 <button type="submit" class="btn btn-primary w-100">Add Room</button>
@@ -45,12 +49,12 @@
 {% endif %}
 
 <h2>Room List</h2>
-<table class="table table-striped table-hover">
+<table class="table table-striped table-hover table-sm">
     <thead>
         <tr>
             <th>Number</th>
             <th>Type</th>
-            <th>Price/Night</th>
+            <th>Base Price/Night (€)</th> {# <--- Changed header #}
             <th>Status</th>
             {% if session.role == 'admin' %}
             <th>Actions</th>
@@ -62,20 +66,19 @@
         <tr>
             <td>{{ chambre.numero_chambre }}</td>
             <td>{{ chambre.type_chambre }}</td>
-            <td>{{ "%.2f"|format(chambre.prix_nuit) }}</td>
+            <td>{{ "%.2f"|format(chambre.prix_nuit_base) }}</td> {# <--- Changed value #}
             <td>
-                 <span class="badge
-                    {% if chambre.statut == 'Libre' %} bg-success
-                    {% elif chambre.statut == 'Occupé' %} bg-danger
-                    {% elif chambre.statut == 'En nettoyage' %} bg-warning text-dark
-                    {% else %} bg-secondary {% endif %}">
+                 <span class="badge rounded-pill {% if chambre.statut == 'Libre' %} bg-success {% elif chambre.statut == 'Occupé' %} bg-danger {% elif chambre.statut == 'En nettoyage' %} bg-warning text-dark {% else %} bg-secondary {% endif %}">
                     {{ chambre.statut }}
                  </span>
             </td>
              {% if session.role == 'admin' %}
              <td>
-                 <!-- Add Edit/Delete buttons here if needed -->
-                 <button class="btn btn-sm btn-secondary" disabled>Edit</button> <!-- Example: Implement later -->
+                 {# --- Added Edit/Delete Buttons --- #}
+                 <a href="{{ url_for('edit_chambre', id=chambre.id_chambre) }}" class="btn btn-sm btn-secondary">Edit</a>
+                 <form action="{{ url_for('delete_chambre', id=chambre.id_chambre) }}" method="post" style="display: inline;" onsubmit="return confirm('Delete Room #{{ chambre.numero_chambre }}?');">
+                     <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                 </form>
              </td>
              {% endif %}
         </tr>

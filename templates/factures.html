@@ -10,7 +10,7 @@
     <div class="card-header">Generate New Invoice</div>
     <div class="card-body">
         <form action="{{ url_for('generate_facture') }}" method="post" class="row g-3">
-            <div class="col-md-8">
+            <div class="col-md-9">
                 <label for="id_reservation" class="form-label">Select Reservation (Confirmed/Completed, No Invoice Yet)</label>
                 <select class="form-select" id="id_reservation" name="id_reservation" required>
                     <option value="" selected disabled>-- Select Reservation --</option>
@@ -19,10 +19,10 @@
                         #{{ res.id_reservation }} - {{ res.client_name }} (Room {{ res.numero_chambre }}, {{ res.date_debut }} to {{ res.date_fin }})
                     </option>
                     {% endfor %}
-                    {% if not reservations_needing_invoice %} <option disabled>No reservations eligible for invoice generation</option> {% endif %}
+                    {% if not reservations_needing_invoice %} <option disabled>No reservations eligible for invoice</option> {% endif %}
                 </select>
             </div>
-            <div class="col-md-4 align-self-end">
+            <div class="col-md-3 align-self-end">
                 <button type="submit" class="btn btn-success w-100" {% if not reservations_needing_invoice %}disabled{% endif %}>Generate Invoice</button>
             </div>
         </form>
@@ -31,17 +31,21 @@
 {% endif %}
 
 <h2>Invoice List</h2>
+<div class="table-responsive"> {# Added for potentially wide tables #}
 <table class="table table-striped table-hover table-sm">
     <thead>
         <tr>
-            <th>Invoice ID</th>
-            <th>Reservation ID</th>
+            <th>Inv. ID</th>
+            <th>Res. ID</th>
             <th>Client</th>
-            <th>Room</th>
             <th>Dates</th>
-            <th>Amount</th>
-            <th>Issued Date</th>
+            <th>Room (€)</th> {# <-- Split Amount #}
+            <th>Services (€)</th> {# <-- Split Amount #}
+            <th>Consumptions (€)</th> {# <-- Split Amount #}
+            <th>Total (€)</th>
+            <th>Issued</th>
             <th>Status</th>
+            <th>Payment Method</th> {# <-- Added Column #}
             {% if session.role in ['admin', 'staff'] %}
             <th>Actions</th>
             {% endif %}
@@ -53,34 +57,53 @@
             <td>#{{ facture.id_facture }}</td>
             <td>#{{ facture.id_reservation }}</td>
             <td>{{ facture.client_name }}</td>
-            <td>#{{ facture.numero_chambre }}</td>
             <td>{{ facture.date_debut }} to {{ facture.date_fin }}</td>
-            <td>{{ "%.2f"|format(facture.montant_total) }}</td>
+            <td>{{ "%.2f"|format(facture.montant_chambre) }}</td> {# <-- Split Amount #}
+            <td>{{ "%.2f"|format(facture.montant_services) }}</td> {# <-- Split Amount #}
+            <td>{{ "%.2f"|format(facture.montant_consommations) }}</td> {# <-- Split Amount #}
+            <td><strong>{{ "%.2f"|format(facture.montant_total) }}</strong></td>
             <td>{{ facture.date_emission }}</td>
             <td>
-                 <span class="badge {% if facture.statut == 'Payée' %}bg-success{% else %}bg-warning text-dark{% endif %}">
+                 <span class="badge rounded-pill {% if facture.statut == 'Payée' %}bg-success{% elif facture.statut == 'Partiellement payée' %}bg-info{% else %}bg-warning text-dark{% endif %}">
                     {{ facture.statut }}
                  </span>
             </td>
+            <td>{{ facture.mode_paiement or '-' }}</td> {# <-- Display Payment Method #}
              {% if session.role in ['admin', 'staff'] %}
              <td>
-                 {% if facture.statut == 'Non payée' %}
-                     <form action="{{ url_for('mark_facture_paid', id=facture.id_facture) }}" method="post" style="display: inline;">
-                         <button type="submit" class="btn btn-success btn-sm">Mark Paid</button>
-                     </form>
-                 {% else %}
-                     <span class="text-muted">-</span>
-                 {% endif %}
+                 {# --- Update Status/Payment Form --- #}
+                 <form action="{{ url_for('update_facture', id=facture.id_facture) }}" method="post" class="row gx-1 gy-1 align-items-center">
+                     <div class="col-auto">
+                         <select name="statut" class="form-select form-select-sm" aria-label="Update status">
+                             <option value="Non payée" {% if facture.statut == 'Non payée' %}selected{% endif %}>Unpaid</option>
+                             <option value="Payée" {% if facture.statut == 'Payée' %}selected{% endif %}>Paid</option>
+                             <option value="Partiellement payée" {% if facture.statut == 'Partiellement payée' %}selected{% endif %}>Partial</option>
+                         </select>
+                     </div>
+                     <div class="col-auto">
+                          <select name="mode_paiement" class="form-select form-select-sm" aria-label="Payment Method">
+                             <option value="" {% if not facture.mode_paiement %}selected{% endif %}>Method...</option>
+                             <option value="Carte" {% if facture.mode_paiement == 'Carte' %}selected{% endif %}>Card</option>
+                             <option value="Espèces" {% if facture.mode_paiement == 'Espèces' %}selected{% endif %}>Cash</option>
+                             <option value="Virement" {% if facture.mode_paiement == 'Virement' %}selected{% endif %}>Transfer</option>
+                             <option value="Chèque" {% if facture.mode_paiement == 'Chèque' %}selected{% endif %}>Check</option>
+                         </select>
+                     </div>
+                     <div class="col-auto">
+                         <button type="submit" class="btn btn-primary btn-sm">Update</button>
+                     </div>
+                 </form>
                  <!-- Add button/link to view details or print -->
              </td>
              {% endif %}
         </tr>
         {% else %}
         <tr>
-            <td colspan="{{ 9 if session.role in ['admin', 'staff'] else 8 }}" class="text-center">No invoices found.</td>
+            <td colspan="{{ 12 if session.role in ['admin', 'staff'] else 11 }}" class="text-center">No invoices found.</td>
         </tr>
         {% endfor %}
     </tbody>
 </table>
+</div> {# End table-responsive #}
 
 {% endblock %}
