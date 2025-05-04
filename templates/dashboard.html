@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block content %}
+<h1>Admin Dashboard</h1>
+<p>Welcome, {{ session.username }}! Here's a quick overview.</p>
+
+{% if error %}
+    <div class="alert alert-danger">Error loading dashboard data: {{ error }}</div>
+{% else %}
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card text-center">
+                <div class="card-header">Current Occupancy Rate</div>
+                <div class="card-body">
+                    <h2 class="card-title">{{ occupancy_rate }}%</h2>
+                    <p class="card-text">Percentage of rooms currently occupied.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card text-center">
+                <div class="card-header">Average Guest Rating</div>
+                <div class="card-body">
+                    <h2 class="card-title">{{ "%.2f"|format(average_rating) }} / 5.00</h2>
+                    <p class="card-text">Based on approved reviews.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <h2>Upcoming Check-ins (Next 7 Days)</h2>
+    {% if upcoming_checkins %}
+    <table class="table table-sm table-striped">
+        <thead>
+            <tr>
+                <th>Check-in Date</th>
+                <th>Guest Name</th>
+                <th>Room</th>
+                <th>Reservation ID</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for checkin in upcoming_checkins %}
+            <tr>
+                <td>{{ checkin.date_debut }}</td>
+                <td>{{ checkin.prenom }} {{ checkin.nom }}</td>
+                <td>{{ checkin.numero_chambre }}</td>
+                <td>#{{ checkin.id_reservation }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="text-muted">No upcoming check-ins found in the next 7 days.</p>
+    {% endif %}
+
+    <!-- Add more dashboard widgets here if needed -->
+
+{% endif %} {# End of error check #}
+
+{% endblock %}

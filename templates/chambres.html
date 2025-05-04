@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Rooms{% endblock %}
+
+{% block content %}
+<h1>Hotel Rooms</h1>
+
+{% if session.role == 'admin' %}
+<div class="card mb-4">
+    <div class="card-header">Add New Room</div>
+    <div class="card-body">
+        <form action="{{ url_for('add_chambre') }}" method="post" class="row g-3">
+            <div class="col-md-2">
+                <label for="numero_chambre" class="form-label">Room Number</label>
+                <input type="text" class="form-control" id="numero_chambre" name="numero_chambre" required>
+            </div>
+            <div class="col-md-3">
+                <label for="type_chambre" class="form-label">Type</label>
+                <input type="text" class="form-control" id="type_chambre" name="type_chambre" list="room_types" required>
+                 <datalist id="room_types">
+                     <option value="Simple">
+                     <option value="Double">
+                     <option value="Suite">
+                     <option value="Familiale">
+                 </datalist>
+            </div>
+             <div class="col-md-2">
+                <label for="prix_nuit" class="form-label">Price/Night</label>
+                <input type="number" step="0.01" class="form-control" id="prix_nuit" name="prix_nuit" required>
+            </div>
+            <div class="col-md-3">
+                 <label for="statut" class="form-label">Status</label>
+                 <select class="form-select" id="statut" name="statut" required>
+                     <option value="Libre">Libre (Available)</option>
+                     <option value="Occupé">Occupé (Occupied)</option>
+                     <option value="En nettoyage">En nettoyage (Cleaning)</option>
+                 </select>
+            </div>
+             <div class="col-md-2 align-self-end">
+                <button type="submit" class="btn btn-primary w-100">Add Room</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+<h2>Room List</h2>
+<table class="table table-striped table-hover">
+    <thead>
+        <tr>
+            <th>Number</th>
+            <th>Type</th>
+            <th>Price/Night</th>
+            <th>Status</th>
+            {% if session.role == 'admin' %}
+            <th>Actions</th>
+            {% endif %}
+        </tr>
+    </thead>
+    <tbody>
+        {% for chambre in chambres %}
+        <tr>
+            <td>{{ chambre.numero_chambre }}</td>
+            <td>{{ chambre.type_chambre }}</td>
+            <td>{{ "%.2f"|format(chambre.prix_nuit) }}</td>
+            <td>
+                 <span class="badge
+                    {% if chambre.statut == 'Libre' %} bg-success
+                    {% elif chambre.statut == 'Occupé' %} bg-danger
+                    {% elif chambre.statut == 'En nettoyage' %} bg-warning text-dark
+                    {% else %} bg-secondary {% endif %}">
+                    {{ chambre.statut }}
+                 </span>
+            </td>
+             {% if session.role == 'admin' %}
+             <td>
+                 <!-- Add Edit/Delete buttons here if needed -->
+                 <button class="btn btn-sm btn-secondary" disabled>Edit</button> <!-- Example: Implement later -->
+             </td>
+             {% endif %}
+        </tr>
+        {% else %}
+        <tr>
+            <td colspan="{{ 5 if session.role == 'admin' else 4 }}" class="text-center">No rooms found.</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% endblock %}

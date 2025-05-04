@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Invoices{% endblock %}
+
+{% block content %}
+<h1>Invoice Management</h1>
+
+{% if session.role in ['admin', 'staff'] %}
+<div class="card mb-4">
+    <div class="card-header">Generate New Invoice</div>
+    <div class="card-body">
+        <form action="{{ url_for('generate_facture') }}" method="post" class="row g-3">
+            <div class="col-md-8">
+                <label for="id_reservation" class="form-label">Select Reservation (Confirmed/Completed, No Invoice Yet)</label>
+                <select class="form-select" id="id_reservation" name="id_reservation" required>
+                    <option value="" selected disabled>-- Select Reservation --</option>
+                    {% for res in reservations_needing_invoice %}
+                    <option value="{{ res.id_reservation }}">
+                        #{{ res.id_reservation }} - {{ res.client_name }} (Room {{ res.numero_chambre }}, {{ res.date_debut }} to {{ res.date_fin }})
+                    </option>
+                    {% endfor %}
+                    {% if not reservations_needing_invoice %} <option disabled>No reservations eligible for invoice generation</option> {% endif %}
+                </select>
+            </div>
+            <div class="col-md-4 align-self-end">
+                <button type="submit" class="btn btn-success w-100" {% if not reservations_needing_invoice %}disabled{% endif %}>Generate Invoice</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+<h2>Invoice List</h2>
+<table class="table table-striped table-hover table-sm">
+    <thead>
+        <tr>
+            <th>Invoice ID</th>
+            <th>Reservation ID</th>
+            <th>Client</th>
+            <th>Room</th>
+            <th>Dates</th>
+            <th>Amount</th>
+            <th>Issued Date</th>
+            <th>Status</th>
+            {% if session.role in ['admin', 'staff'] %}
+            <th>Actions</th>
+            {% endif %}
+        </tr>
+    </thead>
+    <tbody>
+        {% for facture in factures %}
+        <tr>
+            <td>#{{ facture.id_facture }}</td>
+            <td>#{{ facture.id_reservation }}</td>
+            <td>{{ facture.client_name }}</td>
+            <td>#{{ facture.numero_chambre }}</td>
+            <td>{{ facture.date_debut }} to {{ facture.date_fin }}</td>
+            <td>{{ "%.2f"|format(facture.montant_total) }}</td>
+            <td>{{ facture.date_emission }}</td>
+            <td>
+                 <span class="badge {% if facture.statut == 'Payée' %}bg-success{% else %}bg-warning text-dark{% endif %}">
+                    {{ facture.statut }}
+                 </span>
+            </td>
+             {% if session.role in ['admin', 'staff'] %}
+             <td>
+                 {% if facture.statut == 'Non payée' %}
+                     <form action="{{ url_for('mark_facture_paid', id=facture.id_facture) }}" method="post" style="display: inline;">
+                         <button type="submit" class="btn btn-success btn-sm">Mark Paid</button>
+                     </form>
+                 {% else %}
+                     <span class="text-muted">-</span>
+                 {% endif %}
+                 <!-- Add button/link to view details or print -->
+             </td>
+             {% endif %}
+        </tr>
+        {% else %}
+        <tr>
+            <td colspan="{{ 9 if session.role in ['admin', 'staff'] else 8 }}" class="text-center">No invoices found.</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% endblock %}
