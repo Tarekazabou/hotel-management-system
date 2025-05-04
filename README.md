@@ -165,6 +165,6 @@ Contributions are welcome! Please feel free to fork the repository, make changes
 
 ## License
 
-*(Optional: Choose a license if you wish, e.g., MIT)*
+*(tarekAZABOU)*
 
-This project is licensed under the MIT License - see the LICENSE.md file for details (if you create one).
+This project is licensed under the tarekAZABOU License .
