@@ -59,7 +59,7 @@ This project started as a simple API and has been converted into a server-render
 
 1.  **Clone the repository:**
     ```bash
-    git clone <your-repository-url>
+    git clone https://github.com/Tarekazabou/hotel-management-system
     cd gesthotel
     ```
     *(Replace `<your-repository-url>` with the actual URL if you host it on GitHub/GitLab etc.)*
